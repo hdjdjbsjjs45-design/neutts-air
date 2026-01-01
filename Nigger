@@ -1,0 +1,32 @@
+# name=clown_voice.py
+# usage: python clown_voice.py input.wav output_clown.wav
+import sys
+import numpy as np
+import librosa
+import soundfile as sf
+from pydub import AudioSegment, effects
+
+def pitch_shift_librosa(y, sr, n_steps):
+    return librosa.effects.pitch_shift(y, sr, n_steps=n_steps)
+
+def add_echo_pydub(in_path, out_path, echo_gain=-10, delay_ms=120):
+    sound = AudioSegment.from_file(in_path)
+    echo = sound - (abs(echo_gain))
+    combined = sound.overlay(echo, position=delay_ms)
+    # optional: add light reverb by combining several short echoes
+    combined.export(out_path, format="wav")
+
+def main(in_file, out_file, semitones=6):
+    y, sr = librosa.load(in_file, sr=None)
+    y_shifted = pitch_shift_librosa(y, sr, n_steps=semitones)
+    tmp = "tmp_shifted.wav"
+    sf.write(tmp, y_shifted, sr)
+    # Add simple echo/reverb with pydub
+    add_echo_pydub(tmp, out_file, echo_gain=-12, delay_ms=100)
+    print("Wrote", out_file)
+
+if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print("Usage: python clown_voice.py input.wav output.wav")
+    else:
+        main(sys.argv[1], sys.argv[2], semitones=6)
